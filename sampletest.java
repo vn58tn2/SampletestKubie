@@ -16,9 +16,10 @@ public class AssortmentKubieJob implements CommandLineRunner {
             jobType = args[0];
         }
         if ("onboarded-update".equalsIgnoreCase(jobType)) {
-        logger.info("Hello 1");
+        logger.info("Hello 1")};
         
         else if("assortment-notification".equalsIgnoreCase(jobType)){
         logger.info("Triggered assortment notifications API.");
         }
-        
+    }
+    }
