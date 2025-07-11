@@ -88,3 +88,46 @@ deploy:
                 clusterPriority: scus-stage-a6
                 namespace: assortment-kubie
                 execute: onStart
+
+                secrets:
+                akeyless: true
+        #####################################################################################################
+        # Make sure your process ID is configured in the below given path.
+        # This is mandatory for flow to run.
+        #####################################################################################################
+                files:
+                  - destination: kubiejob.properties
+                    content: kubiejob
+                  - destination: db.properties
+                    content: azuredb
+                    config:
+                    path: /secrets/
+                    akeyless:
+                    # Path to the team AD Group
+                    path: 
+
+   stages:
+    - name: stage
+      approvers:
+        groups:
+          - gmp-seller-growth-assortment
+      target:
+        cluster_id: ['']
+      refEventFilters:
+        - refs: [ "main", "kitt_update" , "notifications"]
+          events: [ onPush ]
+          helm:
+           values:
+            metadata:
+             labels:
+               wm.app: ASSORTMENT-KUBIE-SERVICE
+               wm.env: stg
+            min:
+             cpu: 
+             memory: 
+            max:
+             cpu:
+             memory: 
+            env:
+             currentEnv: stage
+             JAVA_OPTS: ""
