@@ -14,25 +14,27 @@ deploy:
           container:
             image: ret-marketplace-docker/assortmentkubiejobs
             tag: latest
-            args: [ "onboarded-update" ]
+          env:
+            JAVA_OPTS: >-
+              -DjobType=onboarded-update
 
-        - jobName: assortment-notification-job
+        - jobName: assortment-notification-acquisition
           container:
             image: ret-marketplace-docker/assortmentkubiejobs
             tag: latest
-            args: [ "assortment-notification" ]
           env:
             JAVA_OPTS: >-
               -DrecommendationCategory=Acquisition
+              -DjobType=assortment-notification
 
-        - jobName: assortment-notification-job
+        - jobName: assortment-notification-optimisation
           container:
             image: ret-marketplace-docker/assortmentkubiejobs
             tag: latest
-            args: [ "assortment-notification" ]
           env:
             JAVA_OPTS: >-
               -DrecommendationCategory=Optimisation
+              -DjobType=assortment-notification
 
       flows:
         # Flow executing one job
@@ -52,9 +54,8 @@ deploy:
                 clusterPriority: scus-stage-a6
                 namespace: assortment-kubie
                 execute: onStart
-                args: [ "onboarded-update" ]
 
-        - flowName: assortment-notification-flow
+        - flowName: assortment-notification-acq-flow
           suspend: true
           trigger:
             schedule: '0 0 */7 * *'   # Every 7 days at midnight
@@ -65,9 +66,25 @@ deploy:
               QB$flow.flowStatus('Starting assortment notification job');
             onSuccess: success
             steps:
-              - step: assortment-notification-job
-                name: assortment-notification-job
+              - step: assortment-notification-acquisition
+                name: assortment-notification-acquisition
                 clusterPriority: scus-stage-a6
                 namespace: assortment-kubie
                 execute: onStart
-                args: [ "assortment-notification" ]
+
+        - flowName: assortment-notification-opt-flow
+          suspend: true
+          trigger:
+            schedule: '0 0 */7 * *'   # Every 7 days at midnight
+          successHistory: 5
+          failHistory: 5
+          flow:
+            onStart: >-
+              QB$flow.flowStatus('Starting assortment notification job');
+            onSuccess: success
+            steps:
+              - step: assortment-notification-optimisation
+                name: assortment-notification-optimisation
+                clusterPriority: scus-stage-a6
+                namespace: assortment-kubie
+                execute: onStart
