@@ -1,0 +1,73 @@
+profiles:
+  - springboot-web-jdk11-ubuntu
+  - git://af-app:kubieprofile:main:Kubie3
+
+build:
+  skip: false
+
+deploy:
+  namespace: assortment-kubie
+  helm:
+    values:
+      jobs:
+        - jobName: update-onboarded-job
+          container:
+            image: ret-marketplace-docker/assortmentkubiejobs
+            tag: latest
+            args: [ "onboarded-update" ]
+
+        - jobName: assortment-notification-job
+          container:
+            image: ret-marketplace-docker/assortmentkubiejobs
+            tag: latest
+            args: [ "assortment-notification" ]
+          env:
+            JAVA_OPTS: >-
+              -DrecommendationCategory=Acquisition
+
+        - jobName: assortment-notification-job
+          container:
+            image: ret-marketplace-docker/assortmentkubiejobs
+            tag: latest
+            args: [ "assortment-notification" ]
+          env:
+            JAVA_OPTS: >-
+              -DrecommendationCategory=Optimisation
+
+      flows:
+        # Flow executing one job
+        - flowName: onboarded-update-flow
+          suspend: true
+          trigger:
+            schedule: '0 */12 * * *'
+          successHistory: 5
+          failHistory: 5
+          flow:
+            onStart: >-
+              QB$flow.flowStatus('Starting item setup feedback polling job');
+            onSuccess: success
+            steps:
+              - step: update-onboarded-job
+                name: update-onboarded-job
+                clusterPriority: scus-stage-a6
+                namespace: assortment-kubie
+                execute: onStart
+                args: [ "onboarded-update" ]
+
+        - flowName: assortment-notification-flow
+          suspend: true
+          trigger:
+            schedule: '0 0 */7 * *'   # Every 7 days at midnight
+          successHistory: 5
+          failHistory: 5
+          flow:
+            onStart: >-
+              QB$flow.flowStatus('Starting assortment notification job');
+            onSuccess: success
+            steps:
+              - step: assortment-notification-job
+                name: assortment-notification-job
+                clusterPriority: scus-stage-a6
+                namespace: assortment-kubie
+                execute: onStart
+                args: [ "assortment-notification" ]
